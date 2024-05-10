@@ -1,0 +1,105 @@
+import asyncio
+import logging
+from aiogram import Bot, Dispatcher, types
+from aiogram.enums import ParseMode
+from aiogram.filters import Command
+from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, URLInputFile
+from aiogram.utils.keyboard import ReplyKeyboardBuilder
+
+logging.basicConfig(level=logging.INFO)
+bot = Bot(token="7072738406:AAEBbbaUJKoujfrnR4VG_1bDJEMSBuTqXGs")
+dp = Dispatcher()
+
+@dp.message(Command("hello"))
+async def cmd_hello(message: Message):
+    await message.answer(
+        f"Hello, <b>, {message.from_user.first_name}!</b>",
+        parse_mode=ParseMode.HTML
+    )
+
+@dp.message(Command("start"))
+async def cmd_start(message: Message):
+    kb = [
+        [
+            types.KeyboardButton(text="Зарегистрироваться"),
+            types.KeyboardButton(text="Авторизоваться")
+        ],
+    ]
+    keyboard = types.ReplyKeyboardMarkup(
+        keyboard=kb,
+        resize_keyboard=True,
+        input_field_placeholder="Введите свое ФИО"
+    )
+    await message.answer("Камилла", reply_markup=keyboard)
+
+registered_users = []
+
+
+# @dp.message(Command('images'))
+# async def upload_photo(message: Message):
+#   # Сюда будем помещать file_id отправленных файлов, чтобы потом ими воспользоваться
+#   file_id = []
+#
+#   file_id = message.photo[-1].file_id  # Берем последний размер изображения, если есть несколько
+#
+#     # Получаем информацию о файле
+#   file_info = await bot.get_file(file_id)
+#
+#
+#   await bot.download_file(file_info.file_path)
+#
+#
+#   with open(f"{file_id}.jpg", "wb") as f:
+#      await bot.download_file(file_info.file_path, f)
+#
+#     # Возвращаем сообщение об успешной загрузке
+#      await message.reply("Фото успешно загружено и сохранено.")
+
+
+
+file_ids = []
+
+@dp.message(Command('images'))
+async def start_upload(message: types.Message):
+    # Отправляем сообщение пользователю с запросом на загрузку файла
+    await message.reply("Пожалуйста, отправьте изображение.")
+
+    # Проверяем, что сообщение содержит фотографию
+    if message.photo:
+        # Получаем file_id фотографии
+        file_id = message.photo[-1].file_id  # Берем последний размер изображения, если есть несколько
+
+        # Добавляем file_id в список
+        file_ids.append(file_id)
+
+        # Отправляем сообщение об успешной загрузке
+        await message.reply("Фото успешно загружено и сохранено.")
+    # else:
+    #     await message.reply("Извините, ваше сообщение не содержит фотографии.")
+
+
+
+@dp.message(Command("register"))
+async def cmd_register(message: Message):
+    # Получаем имя пользователя из сообщения
+    user_name = message.from_user.full_name
+    if user_name not in registered_users:
+        registered_users.append(user_name)
+        await message.answer(f"{user_name} был успешно зарегистрирован.")
+    else:
+        await message.answer(f"{user_name} уже зарегистрирован.")
+
+@dp.message(Command("image"))
+async def image(message: types.Message):
+    keyboard = InlineKeyboardMarkup(row_width=1)
+    button = InlineKeyboardButton("Выбрать изображение", switch_inline_query="Выберите изображение")
+    keyboard.add(button)
+    await message.answer("Выберите изображение:", reply_markup=keyboard)
+
+
+
+async def main():
+    await dp.start_polling(bot)
+
+if __name__ == '__main__':
+    asyncio.run(main())
